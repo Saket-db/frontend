@@ -1,0 +1,139 @@
+import { create } from "zustand";
+import toast from "react-hot-toast";
+import { axiosInstance } from "../lib/axios";
+import { useAuthStore } from "./useAuthStore";
+
+export const useChatStore = create((set, get) => ({
+  messages: {}, // Store messages by user ID
+  users: [],
+  selectedUser: null,
+  isUsersLoading: false,
+  isMessagesLoading: false,
+
+  getUsers: async () => {
+    set({ isUsersLoading: true });
+    try {
+      const res = await axiosInstance.get("/messages/users");
+      set({ users: res.data });
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to load users.");
+    } finally {
+      set({ isUsersLoading: false });
+    }
+  },
+
+  getMessages: async (userId) => {
+    if (!userId) {
+      toast.error("User ID is required to fetch messages.");
+      return;
+    }
+
+    set({ isMessagesLoading: true });
+
+    try {
+      console.log("Fetching messages for user:", userId); // Debugging Log
+      const res = await axiosInstance.get(`/messages/${userId}`);
+
+      console.log("Fetched messages:", res.data); // Debugging Log
+
+      set((state) => ({
+        messages: { ...state.messages, [userId]: res.data || [] }, // Ensure it's always an array
+        isMessagesLoading: false,
+      }));
+    } catch (error) {
+      console.error("Error fetching messages:", error.response?.data || error.message);
+      toast.error(error.response?.data?.message || "Failed to load messages.");
+      set({ isMessagesLoading: false }); // Ensure loading state resets
+    }
+  },
+
+  sendMessage: async (messageData) => {
+    const { selectedUser } = get();
+    if (!selectedUser?._id) {
+      toast.error("No user selected for messaging!");
+      return;
+    }
+
+    try {
+      const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
+
+      if (!res.data) {
+        throw new Error("Empty response from server");
+      }
+
+      set((state) => ({
+        messages: {
+          ...state.messages,
+          [selectedUser._id]: [...(state.messages[selectedUser._id] || []), res.data],
+        },
+      }));
+    } catch (error) {
+      console.error("Failed to send message:", error.response?.data || error.message);
+      toast.error(error.response?.data?.message || "Failed to send message.");
+    }
+  },
+
+
+  subscribeToMessages: () => {
+    const { selectedUser } = get();
+    if (!selectedUser) return;
+  
+    const socket = useAuthStore.getState().socket;
+  
+    socket.on("newMessage", (newMessage) => {
+      const isMessageSentFromSelectedUser = newMessage.senderId === selectedUser._id;
+      if (!isMessageSentFromSelectedUser) return;
+  
+      set((state) => ({
+        messages: {
+          ...state.messages,
+          [selectedUser._id]: [
+            ...(state.messages[selectedUser._id] || []),
+            newMessage,
+          ],
+        },
+      }));
+    });
+  },
+  
+
+  unsubscribeFromMessages: () => {
+    const socket = useAuthStore.getState().socket;
+    socket.off("newMessage");
+  },
+
+  setSelectedUser: (selectedUser) => {
+    if (!selectedUser) {
+      set({ selectedUser: null, messages: {} }); // ✅ Clear selected user and messages
+      return;
+    }
+  
+    set({ selectedUser });
+  
+    // Ensure we reset messages if not fetched
+    if (!get().messages[selectedUser._id]) {
+      set((state) => ({ messages: { ...state.messages, [selectedUser._id]: [] } }));
+      get().getMessages(selectedUser._id);
+    }
+  },
+  
+
+  clearMessages: async () => {
+  const selectedUser = get().selectedUser;
+  if (!selectedUser?._id) return;
+
+  try {
+    await axiosInstance.delete(`/messages/soft-delete/${selectedUser._id}`);
+    set((state) => {
+      const updatedMessages = { ...state.messages };
+      delete updatedMessages[selectedUser._id];
+      return { messages: updatedMessages };
+    });
+    toast.success("Messages cleared");
+  } catch (error) {
+    console.error("Failed to clear messages:", error);
+    toast.error("Failed to clear messages");
+  }
+},
+
+}));
