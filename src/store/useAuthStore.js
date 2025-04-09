@@ -4,7 +4,7 @@ import { axiosInstance } from "../lib/axios.js";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
-const BASE_URL = "http://localhost:5002"
+const BASE_URL = "https://backend-chat-ado2.onrender.com"
 
 export const useAuthStore = create(
   persist(
