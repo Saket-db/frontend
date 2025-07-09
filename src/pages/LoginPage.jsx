@@ -105,6 +105,40 @@ const LoginPage = () => {
                 Create account
               </Link>
             </p>
+            {/* Contact Developer Section */}
+            <div className="mt-4">
+              <button
+                type="button"
+                className="link link-neutral"
+                onClick={() => setShow((v) => !v)}
+              >
+                Contact Developer
+              </button>
+              {show && (
+                <div className="mt-2 text-sm text-base-content/70 space-y-1">
+                  <div>
+                    <span className="font-medium">GitHub: </span>
+                    <a
+                      href="https://github.com/Saket-db"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="link link-primary"
+                    >
+                      Saket-db
+                    </a>
+                  </div>
+                  <div>
+                    <span className="font-medium">Email: </span>
+                    <a
+                      href="mailto:dbsaket04@gmail.com"
+                      className="link link-primary"
+                    >
+                      dbsaket04@gmail.com
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -117,4 +151,5 @@ const LoginPage = () => {
     </div>
   );
 };
+
 export default LoginPage;
