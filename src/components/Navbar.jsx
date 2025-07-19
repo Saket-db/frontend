@@ -3,13 +3,10 @@ import { useAuthStore } from "../store/useAuthStore";
 import { LogOut, MessageSquare, Settings, User, Menu, Bell, BellOff } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { io } from "socket.io-client";
 import toast from "react-hot-toast";
 
-const socket = io("http://localhost:5002", { withCredentials: true });
-
 const Navbar = () => {
-  const { logout, authUser } = useAuthStore();
+  const { logout, authUser, socket } = useAuthStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [notificationsMuted, setNotificationsMuted] = useState(false);
@@ -27,6 +24,7 @@ const Navbar = () => {
 
   // Listen for real-time notifications
   useEffect(() => {
+    if (!socket) return;
     socket.on("receiveNotification", (data) => {
       if (!notificationsMuted) {
         toast(`${data.senderName}: ${data.message}`, {
@@ -38,7 +36,7 @@ const Navbar = () => {
     return () => {
       socket.off("receiveNotification");
     };
-  }, [notificationsMuted]);
+  }, [socket, notificationsMuted]);
 
   return (
     <>
@@ -166,6 +164,8 @@ const Navbar = () => {
                   Cancel
                 </button>
                 <button className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium" onClick={() => logout()}>
+                </button>
+                <button className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium" onClick={() => logout()}>
                   Logout
                 </button>
               </div>
@@ -176,5 +176,4 @@ const Navbar = () => {
     </>
   );
 };
-
 export default Navbar;

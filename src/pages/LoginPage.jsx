@@ -11,6 +11,7 @@ const LoginPage = () => {
     email: "",
     password: "",
   });
+  const [show, setShow] = useState(false); // <-- Add this line
   const { login, isLoggingIn } = useAuthStore();
 
   const handleSubmit = async (e) => {

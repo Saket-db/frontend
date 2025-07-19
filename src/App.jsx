@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar.jsx";
 import Nav from "./components/Nav.jsx";
@@ -10,35 +10,17 @@ import SettingsPage from "./pages/SettingsPage.jsx";
 import { useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
 import { Loader } from "lucide-react";
-import { Toaster, toast } from "react-hot-toast";
-import socket from "./socket";
+import { Toaster } from "react-hot-toast";
 
 const App = () => {
-  const { authUser, checkAuth, isCheckingAuth, onlineUsers } = useAuthStore();
+  const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
   const { theme } = useThemeStore();
-  console.log({onlineUsers})
 
   const location = useLocation();
-  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
-
-  useEffect(() => {
-    if (authUser) {
-      socket.emit("join", authUser._id);
-
-      socket.on("receiveNotification", (data) => {
-        setNotifications((prev) => [...prev, data]);
-        toast.success(data.message);
-      });
-    }
-
-    return () => {
-      socket.off("receiveNotification");
-    };
-  }, [authUser]);
 
   if (isCheckingAuth && !authUser)
     return (
@@ -67,4 +49,3 @@ const App = () => {
 };
 
 export default App;
-  
